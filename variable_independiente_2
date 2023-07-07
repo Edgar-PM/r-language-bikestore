@@ -1,0 +1,58 @@
+#Variable Independiente 2
+library(readxl)
+library(ggplot2)
+library(caret)
+
+#Lee el archivo desde su lugar de origen
+file.choose()
+data <- read_excel("D:/Ale - Drive/Ale/UNIR - [MBA + BI]/13. GPI/GPI - Evaluación Final - datos.xlsx")
+
+#Hace que los data de una columna determinada sean categorizados como nulos (Reduce el tamaño del archivo)
+data$CustomerID <- NULL
+data$Title <- NULL
+data$MiddleName <- NULL
+data$AddressLine1 <- NULL
+data$AddressLine2 <- NULL
+data$PhoneNumber <- NULL
+data$PostalCode <- NULL
+data$PhoneNumber <- NULL
+data$LastUpdated <- NULL
+
+#Visualizar información contenida en la base de data
+head(data)
+
+#Línea de Separación ------------------------------------------------- (Inicio)
+
+# Ajustar el modelo de regresión logística 1
+modelo_logistico <- glm(BikeBuyer ~ NumberCarsOwned, data = data, family = binomial)
+summary(modelo_logistico)
+
+# Crear un data.frame con los valores de AvgMonthSpend para predecir la probabilidad de compra de bicicletas
+data_pred <- data.frame(NumberCarsOwned = seq(min(data$NumberCarsOwned), max(data$NumberCarsOwned), length.out = 100))
+
+# Agregar la probabilidad predicha por el modelo al data.frame
+data_pred$prob <- predict(modelo_logistico, newdata = data_pred, type = "response")
+
+# Graficar la regresión logística
+ggplot(data, aes(x = NumberCarsOwned, y = BikeBuyer)) +
+  geom_point() +
+  geom_line(data = data_pred, aes(x = NumberCarsOwned, y = prob), color = "green") +
+  labs(x = "Número de Autos en Propiedad", y = "Probabilidad de Compra de Bicicleta") +
+  scale_x_continuous(limits = c(0, 5), breaks = seq(0, 5, by = 1)) +
+  theme_bw()
+
+#Línea de Separación -------------------------------------------------(Fin)
+
+#Calcular Modelo de Confusión
+# Obtener las probabilidades predichas por el modelo
+probs <- predict(modelo_logistico, type = "response")
+
+# Convertir las probabilidades en valores binarios (0 o 1) utilizando un umbral de 0.5
+predicciones <- ifelse(probs > 0.5, 1, 0)
+
+# Crear la matriz de confusión
+matriz_confusion <- confusionMatrix(as.factor(predicciones), as.factor(data$BikeBuyer))
+
+# Mostrar la matriz de confusión
+matriz_confusion$table
+
